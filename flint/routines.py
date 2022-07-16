@@ -115,10 +115,12 @@ def get_ships() -> EntitySet[Ship]:
 
 
 @cached
-def get_system_contents(system: System) -> EntitySet[Solar]:
+def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
     """All solars (objects and zones) in a given system."""
     result = []
     contents = ini.parse(system.definition_path())
+    if raw:
+        return contents
 
     # categorise objects based on their keys
     for solar_type, attributes in contents:

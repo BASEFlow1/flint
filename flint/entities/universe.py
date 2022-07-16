@@ -29,7 +29,11 @@ class System(Entity):
 
     def contents(self) -> 'EntitySet[Solar]':
         """All solars in this system."""
-        return routines.get_system_contents(self)
+        return routines.get_system_contents(self, False)
+
+    def contents_raw(self) -> list:
+        """All solars in this system."""
+        return routines.get_system_contents(self, True)        
 
     def zones(self) -> 'EntitySet[Zone]':
         """All zones in this system."""

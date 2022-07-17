@@ -25,6 +25,7 @@ import math
 
 from . import Entity
 from .. import routines
+from ..formats import ini
 
 
 class Equipment(Entity):
@@ -333,6 +334,9 @@ class Commodity(Equipment):
     def bought_at(self) -> Dict['Base', int]:
         """A dict of bases that buy this commodity of the form {base: price}."""
         return self.good().bought_at()
+
+    def ini_parse(path):
+        return ini.parse(path)
 
 
 from .goods import Good, EquipmentGood

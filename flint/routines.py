@@ -121,7 +121,6 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
     contents = ini.parse(system.definition_path())
     if raw:
         return contents
-
     # categorise objects based on their keys
     for solar_type, attributes in contents:
         if 'ids_name' not in attributes:
@@ -132,7 +131,7 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
         if solar_type == 'object':
             o = attributes
             keys = o.keys()
-            if {'base', 'reputation', 'space_costume'} <= keys:
+            if {'base', 'reputation'} <= keys and not 'atmosphere_range' in keys and 'docking_fixture' not in o['archetype'] and 'planetdock' not in o['archetype']:
                 result.append(BaseSolar(**o))
             elif 'goto' in keys:
                 result.append(Jump(**o))
@@ -142,7 +141,9 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
                 result.append(Wreck(**o))
             elif 'star' in keys:
                 result.append(Star(**o))
-            elif 'spin' in keys:
+            elif 'spin' in keys and 'planet' in o['archetype']:
+                result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
+            elif 'atmosphere_range' in keys and 'planet' in o['archetype']:
                 result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
             else:
                 result.append(Object(**o))
@@ -187,3 +188,6 @@ def get_markets() -> Dict[Union[Base, Good], Dict[bool, Dict[Union[Good, Base], 
             result[base_entity][sold][good_entity] = price_at_base
             result[good_entity][sold][base_entity] = price_at_base
     return result
+
+def iniparse(path):
+    return ini.parse(path)

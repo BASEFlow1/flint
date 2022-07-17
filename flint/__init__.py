@@ -29,7 +29,7 @@ def invalidate_cache():
 
 
 from .paths import set_install_path, install_path_set
-from .routines import get_commodities, get_bases, get_equipment, get_ships, get_systems, get_factions, get_goods
+from .routines import get_commodities, get_bases, get_equipment, get_ships, get_systems, get_factions, get_goods, iniparse
 
 
 shorthand = {'bases': get_bases,
@@ -38,7 +38,8 @@ shorthand = {'bases': get_bases,
              'factions': get_factions,
              'goods': get_goods,
              'ships': get_ships,
-             'systems': get_systems}
+             'systems': get_systems,
+             'iniparse': iniparse}
 
 
 def __getattr__(name):

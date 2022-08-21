@@ -104,7 +104,20 @@ class Base(Entity):
     def mbase(self) -> Optional[missions.MBase]:
         """The mission base entry for this base."""
         return missions.get_mbases().get(self.nickname)
-
+    
+    def bribes(self):
+        """The bribes offered on this base."""
+        npcs = self.mbase().npcs
+        bribes = []
+        for npc in npcs: bribes.append(npc.bribe)
+        bribes = [elem for sublist in bribes for elem in sublist]
+        bribes = list(filter(None, bribes))
+        return list(dict.fromkeys([routines.get_factions()[faction] for faction, uhh, idk in bribes]))
+    
+    def missions(self):
+        """The factions offering missions on this base."""
+        return [routines.get_factions()[x.faction] for x in self.mbase().factions if x.offers_missions]
+    
     def owner(self) -> 'Faction':
         """The faction which owns this base (its IFF)."""
         return self.solar().owner() if self.has_solar() \

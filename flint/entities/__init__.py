@@ -55,7 +55,8 @@ class Entity:
         return hash(self.nickname)
 
     def __eq__(self, other) -> bool:
-        return self.nickname == other.nickname
+        try: return self.nickname == other.nickname
+        except: return False
 
     # Return this entity's fields as a dictionary.
     as_dict = as_dict

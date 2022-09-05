@@ -14,7 +14,7 @@ from typing import Tuple, List, Dict, Optional
 
 from dataclassy import dataclass
 
-from .formats import ini
+from .formats import ini, dll
 from . import cached, paths
 
 
@@ -78,8 +78,8 @@ class MVendor:
 @dataclass
 class BaseFaction:
     """Found in mbases.ini, this section describes an individual NPC present on the preceding base."""
-    faction: str
-    weight: int
+    faction: Optional[str] = None
+    weight: Optional[int] = None
     offers_missions: bool = False
     mission_type: Optional[Tuple[str, float, float, int]] = None
     npc: List[str] = []
@@ -107,6 +107,11 @@ class GF_NPC:
     accessory: Optional[str] = None
     base_appr: Optional[str] = None
     rumor_type2: Optional[Tuple[str, str, int, int]] = None
+
+    def name(self, markup = "html"):
+        _markup_formats = dict(html=dll.lookup_as_html, plain=dll.lookup_as_plain, rdl=dll.lookup)
+        lookup = _markup_formats[markup]
+        return lookup(self.individual_name)
 
 
 @dataclass

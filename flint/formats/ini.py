@@ -65,8 +65,13 @@ def parse_file(path: str):
     of entry/value pairs."""
     if bini.is_bini(path):
         return bini.parse_file(path)
-    with open(path, encoding='windows-1252') as f:
-        contents = f.read().lower()  # files are case insensitive
+    try:
+        with open(path, encoding='windows-1252') as f:
+            contents = f.read().lower()  # files are case insensitive
+    except:
+        with open(path, encoding='utf-8') as f:
+            contents = f.read().lower()  # files are case insensitive       
+            
     contents.replace(DELIMITER_COMMENT + SECTION_NAME_START, '')  # delete commented section markers
     return list(map(parse_section, contents.split(SECTION_NAME_START)))
 

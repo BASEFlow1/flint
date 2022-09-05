@@ -104,20 +104,53 @@ class Base(Entity):
     def mbase(self) -> Optional[missions.MBase]:
         """The mission base entry for this base."""
         return missions.get_mbases().get(self.nickname)
-    
+
     def bribes(self):
         """The bribes offered on this base."""
-        npcs = self.mbase().npcs
-        bribes = []
-        for npc in npcs: bribes.append(npc.bribe)
-        bribes = [elem for sublist in bribes for elem in sublist]
-        bribes = list(filter(None, bribes))
-        return list(dict.fromkeys([routines.get_factions()[faction] for faction, uhh, idk in bribes]))
+        if self.mbase():
+            npcs = self.mbase().npcs
+            bribes = []
+            for npc in npcs: bribes.append(npc.bribe) if type(npc.bribe) == list else bribes.append([npc.bribe])
+            bribes = [elem for sublist in bribes for elem in sublist]
+            bribes = list(filter(None, bribes))
+        return EntitySet(routines.get_factions()[faction[0]] for faction in bribes)
     
     def missions(self):
         """The factions offering missions on this base."""
-        return [routines.get_factions()[x.faction] for x in self.mbase().factions if x.offers_missions]
-    
+        factions = []
+        if self.mbase():
+            for faction in self.mbase().factions:
+                    if faction.offers_missions and type(faction.faction) != list:
+                        factions.append(routines.get_factions()[faction.faction])
+                    elif faction.offers_missions:
+                        for fact, offers in zip(faction.faction, faction.offers_missions):
+                            if offers:
+                                factions.append(routines.get_factions()[fact])
+        return EntitySet(factions)
+
+    def factions(self) -> list:
+        """All factions present on this base"""
+        if self.mbase():
+            return EntitySet(routines.get_factions()[fact.faction] for fact in [entry for entry in self.mbase().factions])
+        
+
+    def rumors(self, markup = "html"):
+        """A dict of all rumors offered on this base and their factions"""
+        lookup = self._markup_formats[markup]
+        if self.mbase():
+            rumors = {}
+            npcs = self.mbase().npcs
+
+            for npc in npcs:
+                temp = []
+                if type(npc.rumor) != list: npc.rumor = [npc.rumor]
+                for rumor in npc.rumor:
+                    temp.append(lookup(rumor[3]))
+                if not temp == []:
+                    rumors[npc.affiliation] = temp
+            return rumors
+                        
+
     def owner(self) -> 'Faction':
         """The faction which owns this base (its IFF)."""
         return self.solar().owner() if self.has_solar() \

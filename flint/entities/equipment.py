@@ -325,18 +325,16 @@ class Commodity(Equipment):
     decay_per_second: int
     volume: int  # volume of one unit in ship's cargo bay
 
-    def price_at(self):
+    def price_at(self, base):
         pass
 
     def highest_price(self):
-        return
+        return sorted(self.bought_at().items(), key=lambda item:item[1])[-1]
 
     def bought_at(self) -> Dict['Base', int]:
         """A dict of bases that buy this commodity of the form {base: price}."""
         return self.good().bought_at()
 
-    def ini_parse(path):
-        return ini.parse(path)
 
 
 from .goods import Good, EquipmentGood

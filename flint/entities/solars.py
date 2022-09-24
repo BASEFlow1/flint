@@ -10,8 +10,8 @@ from typing import Tuple, Optional, Union
 from dataclassy import dataclass
 
 from . import Entity
-from .. import maps
-
+from .. import maps, interface, routines
+from ..formats import ini
 
 class Solar(Entity):
     """A solar is something fixed in space (this name comes from the DATA/SOLAR directory)."""
@@ -89,8 +89,11 @@ class BaseSolar(Object):
 
         specifications = lookup(self.ids_info)
         try:
-            synopsis = lookup(self.ids_info + 1)
-            return specifications + '<p>' + synopsis
+            try:
+                synopsis = lookup(interface.get_infocardmap()[self.ids_info])
+            except KeyError:
+                synopsis = lookup(self.ids_info + 1)
+            return specifications + '<p >' + synopsis
         except KeyError:
             return specifications
 

@@ -74,7 +74,7 @@ def dump_all_to_file(filename: str = 'infocards.txt'):
     """Dump all string resources to a text file in an identical format to that produced by FLInfocardIE."""
     resources = dump_all()
     pairs = (f'{id_}\n{text.strip()}\n' for id_, text in resources.items())
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding="utf-8") as f:
         f.writelines(pairs)
 
 

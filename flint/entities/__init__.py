@@ -15,8 +15,8 @@ import pprint
 
 from dataclassy import dataclass, as_dict
 
-from ..formats import dll
-from .. import cached
+from ..formats import dll, ini
+from .. import cached, paths
 
 
 @dataclass(kwargs=True, slots=True)
@@ -49,7 +49,7 @@ class Entity:
     def infocard(self, markup='html') -> str:
         """The infocard for this entity, formatted in the markup language (`rdl`, `html` or `plain`) specified."""
         lookup = self._markup_formats[markup]
-        return lookup(self.ids_info)
+        return lookup(self.ids_info[0] if type(self.ids_info) == list else self.ids_info)
 
     def __hash__(self) -> int:
         return hash(self.nickname)
@@ -66,7 +66,6 @@ class Entity:
 
 T = TypeVar('T')
 F = TypeVar('F')
-
 
 class EntitySet(Mapping, Generic[T]):
     """An immutable collection of entities, indexed by nickname."""

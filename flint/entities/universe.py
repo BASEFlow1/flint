@@ -109,11 +109,23 @@ class Base(Entity):
         """The bribes offered on this base."""
         if self.mbase():
             npcs = self.mbase().npcs
-            bribes = []
-            for npc in npcs: bribes.append(npc.bribe) if type(npc.bribe) == list else bribes.append([npc.bribe])
+            bribes = [npc.bribe if type(npc.bribe) == list else [npc.bribe] for npc in npcs]
+            factions = []
             bribes = [elem for sublist in bribes for elem in sublist]
             bribes = list(filter(None, bribes))
-        return EntitySet(routines.get_factions()[faction[0]] for faction in bribes)
+            for faction in bribes:
+                try:
+                    factions.append(faction[0])
+                except KeyError:
+                    pass
+            factions = list(dict.fromkeys(factions))
+            facts = []
+            for x in factions:
+                try:
+                    facts.append(routines.get_factions()[x])
+                except KeyError:
+                    pass
+            return EntitySet(facts)
     
     def missions(self):
         """The factions offering missions on this base."""
@@ -121,12 +133,12 @@ class Base(Entity):
         if self.mbase():
             for faction in self.mbase().factions:
                     if faction.offers_missions and type(faction.faction) != list:
-                        factions.append(routines.get_factions()[faction.faction])
+                        factions.append(faction.faction)
                     elif faction.offers_missions:
                         for fact, offers in zip(faction.faction, faction.offers_missions):
                             if offers:
-                                factions.append(routines.get_factions()[fact])
-        return EntitySet(factions)
+                                factions.append(fact)
+        return EntitySet(routines.get_factions()[x] for x in factions)
 
     def factions(self) -> list:
         """All factions present on this base"""

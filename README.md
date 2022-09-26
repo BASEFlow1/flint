@@ -54,3 +54,4 @@ In addition, particular thanks goes to:
 - adoxa and cshake for [deciphering](https://the-starport.net/modules/newbb/viewtopic.php?&topic_id=562) RDL
 - cshake and Alex for providing a cross-platform DLL parser, which facilitated early development
 - Syrus for support in the early stages of development
+

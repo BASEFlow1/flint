@@ -212,7 +212,7 @@ class Faction(Entity):
 
     def bases(self) -> EntitySet[Base]:
         """All bases owned by this faction."""
-        return EntitySet(b for s in routines.get_systems() for b in s.bases().where(reputation=self.nickname))
+        return EntitySet(base for base in routines.get_bases() if base.has_solar() and base.solar().reputation == self.nickname)
 
     def rep_sheet(self) -> Dict['Faction', float]:
         """How this faction views other factions - its reputation sheet."""

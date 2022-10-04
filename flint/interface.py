@@ -29,7 +29,7 @@ def rdl_to_html(rdl: str) -> str:
 
 def rdl_to_plaintext(rdl: str) -> str:
     """Translate RDL to plaintext, stripping all tags and replacing <PARA/> with a newline."""
-    return strip_html(rdl_to_html(rdl).replace("<p>", "\n"))
+    return strip_html(rdl_to_html(rdl).replace("<p>", "\n")).replace("&nbsp;", "")
     rdl = rdl.replace('<PARA/>', '\n').replace('</PARA>', '')
     tree = xml.fromstring(rdl)
     return xml.tostring(tree, encoding='unicode', method='text')

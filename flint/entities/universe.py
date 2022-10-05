@@ -231,6 +231,15 @@ class Faction(Entity):
         """The legality of this faction as defined in its FactionProps entry (Lawful or Unlawful)."""
         return self.props().legality.capitalize()
 
+    def ships(self) -> EntitySet[Ship]:
+        """All ships this faction uses, as defined in faction_props.ini"""
+        result = []
+
+        for x in self.props().npc_ship:
+            result.append(routines.get_npcships()[x].ship())
+
+        return EntitySet(result)
+
     NODOCK_REP = -0.65
 
 

@@ -22,7 +22,7 @@ from .entities import Good, EquipmentGood, CommodityGood, ShipHull, ShipPackage
 from .entities import Commodity, Equipment, Armor, ShieldGenerator, Thruster, Gun, Engine, Power, ShieldBattery, \
     CounterMeasure, CounterMeasureDropper, Scanner, Tractor, CargoPod, CloakingDevice, RepairKit, Mine, MineDropper, \
     Munition, Explosion, Motor
-from .entities import Ship
+from .entities import Ship, NPCShip
 from .entities import Base, System, Faction
 from .entities import Solar, Object, Jump, BaseSolar, Star, Planet, PlanetaryBase, TradeLaneRing, Wreck, Zone
 from . import entities
@@ -113,6 +113,16 @@ def get_ships() -> EntitySet[Ship]:
 
     return EntitySet(result)
 
+@cached
+def get_npcships() -> EntitySet[NPCShip]:
+    path = paths.construct_path("DATA/MISSIONS/npcships.ini")
+    npcships = ini.sections(path)['npcshiparch']
+    result = []
+
+    for ship in npcships:
+        result.append(NPCShip(**ship))
+
+    return EntitySet(result)
 
 @cached
 def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
@@ -189,6 +199,3 @@ def get_markets() -> Dict[Union[Base, Good], Dict[bool, Dict[Union[Good, Base], 
             result[base_entity][sold][good_entity] = price_at_base
             result[good_entity][sold][base_entity] = price_at_base
     return result
-
-def iniparse(path):
-    return ini.parse(path)

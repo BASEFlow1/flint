@@ -152,6 +152,22 @@ class Ship(Entity):
 
         return result
 
+class NPCShip(Entity):
+    """Ship defined in npcships.ini"""
+    loadout: str
+    level: str
+    ship_archetype: str
+    state_graph: str
+    pilot: Optional[str] = None
+    npc_class: Optional[tuple] = None
+
+    def ship(self):
+        """Get the ship Entity defined in ship_archetype"""
+        try:
+            return routines.get_ships()[self.ship_archetype]
+        except KeyError:
+            return None
+
 
 @dataclass
 class Hardpoint:

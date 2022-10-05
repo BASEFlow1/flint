@@ -240,6 +240,20 @@ class Faction(Entity):
 
         return EntitySet(result)
 
+    def bribes(self) -> EntitySet[Base]:
+        """EntitySet of bases that offer bribes/rep hacks for this faction"""
+        result = []
+
+        for base in routines.get_bases():
+            try:
+                if base.has_solar():
+                    if self.nickname in base.bribes():
+                        result.append(base)
+            except TypeError:
+                pass
+
+        return EntitySet(result)
+
     NODOCK_REP = -0.65
 
 

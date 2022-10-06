@@ -77,6 +77,8 @@ class System(Entity):
         """The name of the region this system is in, extracted from the infocard."""
         *_, rest = self.infocard('rdl').partition('<TRA data="1" mask="1" def="-2"/><TEXT>')
         region, *_ = rest.partition('</TEXT>')
+        if region.title() == "Independent":
+            region = "Independent Worlds"
         return region.title() if region else 'Unknown'
 
 
@@ -234,9 +236,11 @@ class Faction(Entity):
     def ships(self) -> EntitySet[Ship]:
         """All ships this faction uses, as defined in faction_props.ini"""
         result = []
+        npc_ship = self.props().npc_ship if type(self.props().npc_ship) == list else [self.props().npc_ship]
 
-        for x in self.props().npc_ship:
-            result.append(routines.get_npcships()[x].ship())
+        for x in npc_ship:
+            if routines.get_npcships()[x].ship():
+                result.append(routines.get_npcships()[x].ship())
 
         return EntitySet(result)
 

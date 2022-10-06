@@ -128,6 +128,11 @@ class Gun(Weapon):
         """Energy consumption per second (i.e. power).."""
         return ((self.hull_damage() + self.shield_damage()) / self.power_usage) if self.power_usage else 0.0
 
+    def rating(self) -> float:
+        """FLStat rating"""
+        value = self.hull_dps() / self.price() * 1000 if self.hull_dps() > self.shield_dps() else self.shield_dps() / self.price() * 1000
+        return self.efficiency() * value
+
     def technology(self) -> Optional[str]:
         """The technology of this gun. Null for non-energy (e.g. kinetic) guns."""
         return self.munition().weapon_type

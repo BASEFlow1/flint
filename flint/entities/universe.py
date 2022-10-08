@@ -266,8 +266,8 @@ class Faction(Entity):
                 if base.has_solar():
                     if self.nickname in base.rumors().keys():
                         result[base.nickname] = base.rumors()[self.nickname]
-            except AttributeError as e:
-                print(e)
+            except AttributeError:
+                pass
 
         return result
 

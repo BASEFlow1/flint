@@ -258,6 +258,19 @@ class Faction(Entity):
 
         return EntitySet(result)
 
+    def rumors(self) -> dict:
+        """All rumors this faction offers mapped to the bases they are offered on"""
+        result = {}
+        for base in routines.get_bases():
+            try:
+                if base.has_solar():
+                    if self.nickname in base.rumors().keys():
+                        result[base.nickname] = base.rumors()[self.nickname]
+            except AttributeError as e:
+                print(e)
+
+        return result
+
     NODOCK_REP = -0.65
 
 

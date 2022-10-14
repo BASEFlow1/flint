@@ -134,9 +134,9 @@ class Base(Entity):
         factions = []
         if self.mbase():
             for faction in self.mbase().factions:
-                    if faction.offers_missions and type(faction.faction) != list:
+                    if faction.mission_type and type(faction.faction) != list:
                         factions.append(faction.faction)
-                    elif faction.offers_missions:
+                    elif faction.mission_type:
                         for fact, offers in zip(faction.faction, faction.offers_missions):
                             if offers:
                                 factions.append(fact)

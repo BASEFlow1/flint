@@ -156,6 +156,8 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
                 result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
             elif 'atmosphere_range' in keys and 'planet' in o['archetype']:
                 result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
+            elif 'planetdock' in o['archetype']:
+                result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))                
             else:
                 result.append(Object(**o))
 

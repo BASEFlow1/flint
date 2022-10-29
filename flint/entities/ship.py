@@ -38,6 +38,7 @@ class Ship(Entity):
     angular_drag: Tuple[float, float, float]
     rotation_inertia: Tuple[float, float, float]
     hp_type: List[Tuple[str, ...]] = []
+    material_library: Optional[str] = None
 
     def hull(self) -> Optional[ShipHull]:
         """This ship's hull entity."""
@@ -137,6 +138,11 @@ class Ship(Entity):
             for hp in hardpoints:
                 result.setdefault(hp, []).append(Hardpoint(hp_class))
         return result
+
+    def materials(self) -> list:
+        """Paths to this ships material files"""
+        materials = self.material_library if type(self.material_library) == list else [materials]
+        return [paths.construct_path("data/" + path) for path in materials]
 
     @staticmethod
     @cached

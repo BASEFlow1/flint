@@ -165,7 +165,11 @@ class Base(Entity):
                         rumors[npc.affiliation] = temp
                     else:
                         rumors[npc.affiliation] = rumors.get(npc.affiliation) + temp
-            return rumors
+            
+            for affiliation, content in rumors.items():
+                rumors[affiliation] = list(dict.fromkeys(content))
+            
+            return {affiliation: list(dict.fromkeys(content)) for affiliation, content in rumors.items()}
                         
 
     def owner(self) -> 'Faction':

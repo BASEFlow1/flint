@@ -160,8 +160,11 @@ class Base(Entity):
                 if type(npc.rumor) != list: npc.rumor = [npc.rumor]
                 for rumor in npc.rumor:
                     temp.append(lookup(rumor[3]))
-                if not temp == []:
-                    rumors[npc.affiliation] = temp
+                if temp != []:
+                    if not rumors.get(npc.affiliation):
+                        rumors[npc.affiliation] = temp
+                    else:
+                        rumors[npc.affiliation] = rumors.get(npc.affiliation) + temp
             return rumors
                         
 

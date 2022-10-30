@@ -166,9 +166,6 @@ class Base(Entity):
                     else:
                         rumors[npc.affiliation] = rumors.get(npc.affiliation) + temp
             
-            for affiliation, content in rumors.items():
-                rumors[affiliation] = list(dict.fromkeys(content))
-            
             return {affiliation: list(dict.fromkeys(content)) for affiliation, content in rumors.items()}
                         
 

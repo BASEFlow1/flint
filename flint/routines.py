@@ -24,7 +24,7 @@ from .entities import Commodity, Equipment, Armor, ShieldGenerator, Thruster, Gu
     Munition, Explosion, Motor
 from .entities import Ship, NPCShip
 from .entities import Base, System, Faction
-from .entities import Solar, Object, Jump, BaseSolar, Star, Planet, PlanetaryBase, TradeLaneRing, Wreck, Zone
+from .entities import Solar, Object, Jump, BaseSolar, Star, Planet, PlanetaryBase, TradeLaneRing, Wreck, Zone, Loadout
 from . import entities
 
 
@@ -100,6 +100,11 @@ def get_commodities() -> EntitySet[Commodity]:
     is for convenience's sake."""
     return get_equipment().of_type(Commodity)
 
+@cached
+def get_guns() -> EntitySet[Gun]:
+    """All guns defined in the game files. Guns are actually a type of equipment, so this function
+    is for convenience's sake."""
+    return get_equipment().of_type(Gun)
 
 @cached
 def get_ships() -> EntitySet[Ship]:
@@ -110,6 +115,16 @@ def get_ships() -> EntitySet[Ship]:
     for s in ships:
         if 'ids_info3' in s:
             result.append(Ship(**s))
+
+    return EntitySet(result)
+
+@cached
+def get_loadouts() -> EntitySet[Loadout]:
+    loadouts = ini.sections(paths.inis['loadouts'])["loadout"]
+    result = []
+
+    for l in loadouts:
+        result.append(Loadout(**l))
 
     return EntitySet(result)
 

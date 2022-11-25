@@ -47,6 +47,11 @@ def get_infocardmap() -> dict:
     """Return a dict of each ID in infocardmap.ini mapped to the other ID idk"""
     return {id0: id1 for id0, id1 in ini.parse(paths.construct_path("DATA/INTERFACE/infocardmap.ini"))[0][1]["map"]}
 
+@cached
+def get_constants() -> dict:
+    path = paths.inis["constants"]
+    return {header: attributes for header, attributes in ini.parse(path)}
+
 
 # A lookup table mapping RDL (Render Display List) tags to HTML(4). Freelancer, to my eternal horror, uses these for
 # formatting for strings inside these resource DLLs. Based on work by adoxa and cshake.

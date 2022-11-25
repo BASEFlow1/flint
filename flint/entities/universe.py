@@ -4,7 +4,8 @@ This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
 file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Set
+from collections import defaultdict
 import os
 
 from dataclassy import Internal
@@ -12,7 +13,7 @@ from dataclassy import Internal
 from ..formats import dll
 from .. import paths, routines, missions
 from . import Entity, EntitySet
-from .solars import BaseSolar
+from .solars import BaseSolar, Wreck
 from .equipment import Equipment, Commodity
 from .ship import Ship
 from .goods import EquipmentGood, CommodityGood, ShipPackage
@@ -34,6 +35,10 @@ class System(Entity):
     def contents_raw(self) -> 'list':
         """All solars in this system."""
         return routines.get_system_contents(self, True)
+
+    def wrecks(self) -> 'EntitySet[Wreck]':
+        """All wrecks in this system"""
+        return self.contents().of_type(Wreck)
 
     def zones(self) -> 'EntitySet[Zone]':
         """All zones in this system."""
@@ -77,8 +82,6 @@ class System(Entity):
         """The name of the region this system is in, extracted from the infocard."""
         *_, rest = self.infocard('rdl').partition('<TRA data="1" mask="1" def="-2"/><TEXT>')
         region, *_ = rest.partition('</TEXT>')
-        if region.title() == "Independent":
-            region = "Independent Worlds"
         return region.title() if region else 'Unknown'
 
 
@@ -146,28 +149,23 @@ class Base(Entity):
         """All factions present on this base"""
         if self.mbase():
             return EntitySet(routines.get_factions()[fact.faction] for fact in [entry for entry in self.mbase().factions])
-        
-
-    def rumors(self, markup = "html"):
-        """A dict of all rumors offered on this base and their factions"""
+ 
+    def rumors(self, markup='html') -> Dict[str, Set[str]]:
+        """All rumors offered on this base, of the form {faction -> rumors}"""
         lookup = self._markup_formats[markup]
         if self.mbase():
-            rumors = {}
+            rumors = defaultdict(set)
             npcs = self.mbase().npcs
 
             for npc in npcs:
-                temp = []
-                if type(npc.rumor) != list: npc.rumor = [npc.rumor]
-                for rumor in npc.rumor:
-                    temp.append(lookup(rumor[3]))
-                if temp != []:
-                    if not rumors.get(npc.affiliation):
-                        rumors[npc.affiliation] = temp
-                    else:
-                        rumors[npc.affiliation] = rumors.get(npc.affiliation) + temp
-            
-            return {affiliation: list(dict.fromkeys(content)) for affiliation, content in rumors.items()}
-                        
+                if npc.rumor:
+                    if type(npc.rumor) is not list:
+                        npc.rumor = [npc.rumor]
+                    rumors[routines.get_factions()[npc.affiliation]].update(
+                        lookup(rumor_id) for *_, rumor_id in npc.rumor
+                    )
+            return dict(rumors)
+        return {}
 
     def owner(self) -> 'Faction':
         """The faction which owns this base (its IFF)."""

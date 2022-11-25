@@ -130,6 +130,10 @@ class Ship(Entity):
         engine = self.engine()
         return engine.cruise_charge_time if engine else 0
 
+    def cruise_speed(self):
+        """The cruise speed of this ship, either defined in constants.ini or under "cruise_speed" in the engine block"""
+        return self.engine().cruise_speed_()
+
     def hardpoints(self) -> Dict[str, List['Hardpoint']]:
         """A mapping of this ship's hardpoints of the form
         {hardpoint nickname -> union of weapon classes that can be mounted on this hardpoint}."""

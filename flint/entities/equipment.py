@@ -24,7 +24,7 @@ from typing import Dict, Optional, Tuple, cast
 import math
 
 from . import Entity
-from .. import routines
+from .. import routines, interface
 from ..formats import ini
 
 
@@ -308,10 +308,14 @@ class ShieldBattery(Equipment):
 class Engine(Mountable):
     """A reaction engine that must be mounted to a ship to provide propulsion."""
     cruise_charge_time: int
-    cruise_speed: Optional[int] = 350
+    cruise_speed: Optional[int] = 0
     reverse_fraction: float
     linear_drag: float
     max_force: float
+
+    def cruise_speed_(self):
+        return  self.cruise_speed if self.cruise_speed is not 0 else \
+                interface.get_constants()["engineequipconsts"]["cruising_speed"] 
     
 
 # equipment typically defined in select_equip.ini

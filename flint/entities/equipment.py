@@ -26,6 +26,8 @@ import math
 from . import Entity
 from .. import routines, interface
 from ..formats import ini
+from PIL import Image
+from io import BytesIO
 
 
 class Equipment(Entity):
@@ -35,6 +37,10 @@ class Equipment(Entity):
     def icon(self) -> bytes:
         """This equipment's icon in TGA format."""
         return self.good().icon()
+
+    def icon_show(self):
+        image = Image.open(BytesIO(self.icon()))
+        image.show()
 
     def good(self) -> Optional['Good']:
         """The good entity for this piece of equipment."""
@@ -189,6 +195,10 @@ class Mine(Projectile):
     acceleration: int
     ammo_limit: int
 
+    def name(self):
+        """Add "(Ammo)" to the end of the name to distinguish from the weapon it's used for"""
+        return self.name_() + " (Ammo)"
+
     def explosion(self) -> Optional['Explosion']:
         """The Explosion triggered by this mine."""
         return routines.get_equipment().get(self.explosion_arch)
@@ -206,6 +216,10 @@ class Munition(Projectile):
     cruise_disruptor: Optional[bool] = None  # only set for missiles
     motor: Optional[str] = None  # only set for missiles
     seeker: Optional[str] = None
+
+    def name(self):
+        """Add "(Ammo)" to the end of the name to distinguish from the weapon it's used for"""
+        return self.name_() + " (Ammo)"
 
     def explosion(self) -> Optional['Explosion']:
         """The Explosion triggered by this munition."""
@@ -314,7 +328,7 @@ class Engine(Mountable):
     max_force: float
 
     def cruise_speed_(self):
-        return  self.cruise_speed if self.cruise_speed is not 0 else \
+        return  self.cruise_speed if self.cruise_speed != 0 else \
                 interface.get_constants()["engineequipconsts"]["cruising_speed"] 
     
 

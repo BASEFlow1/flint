@@ -65,7 +65,7 @@ def dump_all() -> Dict[int, str]:
     This is a bit hacky Look up the first resource in each DLL to force the file to be lazy-loaded."""
     result = {}
     for i in paths.dlls:
-        lookup(i * 65536)
+        lookup_as_html(i * 65536)
         result.update(resource_table[i])
     return result
 

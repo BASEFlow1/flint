@@ -167,6 +167,11 @@ class Base(Entity):
             return dict(rumors)
         return {}
 
+    def news(self):
+        """A list of all news items being shown on this base"""
+        return missions.get_news().get(self.nickname)
+
+
     def owner(self) -> 'Faction':
         """The faction which owns this base (its IFF)."""
         return self.solar().owner() if self.has_solar() \

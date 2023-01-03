@@ -16,7 +16,8 @@ from .goods import ShipHull, ShipPackage
 from .equipment import Equipment, Power, Engine
 from ..formats import dll
 from .. import routines, cached, paths
-
+from PIL import Image
+from io import BytesIO
 
 LOG_OF_E = math.log10(math.e)  # used to approximate angular acceleration curve
 
@@ -66,6 +67,10 @@ class Ship(Entity):
     def icon(self) -> bytes:
         """This ship's icon."""
         return self.hull().icon()
+
+    def icon_show(self):
+        image = Image.open(BytesIO(self.icon()))
+        image.show()
 
     def infocard(self, markup='html') -> str:
         """I have no idea why the order these are displayed in is not ascending, but anyway."""

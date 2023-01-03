@@ -46,6 +46,10 @@ class Entity:
         """The display name of this entity."""
         return dll.lookup(self.ids_name)
 
+    def name_(self) -> str:
+        """The display name of this entity."""
+        return dll.lookup(self.ids_name)
+
     def infocard(self, markup='html') -> str:
         """The infocard for this entity, formatted in the markup language (`rdl`, `html` or `plain`) specified."""
         lookup = self._markup_formats[markup]

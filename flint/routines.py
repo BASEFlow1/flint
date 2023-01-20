@@ -140,6 +140,17 @@ def get_npcships() -> EntitySet[NPCShip]:
     return EntitySet(result)
 
 @cached
+def get_wrecks() -> EntitySet[Wreck]:
+    result = []
+
+    for s in get_systems():
+        for wreck in s.wrecks():
+            result.append(wreck)
+
+    return EntitySet(result)
+
+
+@cached
 def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
     """All solars (objects and zones) in a given system."""
     result = []

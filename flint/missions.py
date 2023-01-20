@@ -62,7 +62,8 @@ def get_news() -> Dict[str, 'NewsItem']:
 	for _, contents in news:
 		bases = contents.get("base")
 		if bases:
-			if type(bases) != list: bases = [bases]
+			if type(bases) != list:
+				bases = [bases]
 			for base in bases:
 				if result.get(base):
 					result[base].append(NewsItem(**contents))

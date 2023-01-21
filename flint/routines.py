@@ -160,9 +160,12 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
     # categorise objects based on their keys
     for solar_type, attributes in contents:
         if 'ids_name' not in attributes:
+            pass
+        try:
+            attributes['_system'] = system
+            attributes['pos'] = PosVector(*attributes['pos'])
+        except:
             continue
-        attributes['_system'] = system
-        attributes['pos'] = PosVector(*attributes['pos'])
 
         if solar_type == 'object':
             o = attributes

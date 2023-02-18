@@ -263,6 +263,11 @@ class Explosion(Projectile):
 class Thruster(External):
     """A thruster that provides supplementary acceleration and velocity to the main engine."""
     power_usage: float
+    max_force: float
+    explosion_resistance: float
+
+    def efficiency(self):
+        return self.max_force / self.power_usage
 
 
 class ShieldGenerator(External):
@@ -270,6 +275,11 @@ class ShieldGenerator(External):
     shield_type: str = ''  # the shield's technology type
     max_capacity: float
     explosion_resistance: float = 0.0
+    regeneration_rate: float
+    offline_rebuild_time: int
+    offline_threshold: float
+    constant_power_draw: int
+    rebuild_power_draw: int
 
 
 # equipment typically defined in misc_equip.ini

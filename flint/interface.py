@@ -74,9 +74,11 @@ RDL_TO_HTML = {
     '<TRA data="0" mask="7" def="-1"/>':           '</b></u>',  # un-(bold, underline) 2
     '<TRA data="65280" mask="-32" def="31"/>':     '<font color="red">',  # red
     '<TRA data="96" mask="-32" def="-1"/>':        '</font>',  # un-colour
+    '<TRA color="default"/>':                       '</font>', # un-color
     '<TRA data="65281" mask="-31" def="30"/>':     '<b><font color="red">',  # (bold, red)
     '<TRA data="96" mask="-31" def="-1"/>':        '</b></font>',  # un-(bold, red)
     '<TRA data="-16777216" mask="-32" def="31"/>': '<font color="blue">',  # blue
+    '<TRA color="white" bold="default"/>':         '</b><font color="white>', # unbold, white
     '<PARA/>':                                     '<p>',  # newline
     '</PARA>':                                     '</p>',
     '<JUST loc="left"/>':                          '<p align="left">',  # newline with left-aligned text

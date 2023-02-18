@@ -11,8 +11,9 @@ they lack associated string resource fields and/or nicknames.
 Instead they "belong to" a composite Entity, like a Base or Faction.
 """
 from typing import Tuple, List, Dict, Optional
+from collections import defaultdict
 
-from dataclassy import dataclass
+from dataclassy import dataclass, Internal
 
 from .formats import ini, dll
 from . import cached, paths
@@ -37,6 +38,8 @@ def get_mbases() -> Dict[str, 'MBase']:
     bases = []
 
     for name, contents in sections:
+        contents = list(filter(None, contents))
+
         if name == 'mbase':
             base = MBase(**contents[0])
             bases.append(base)
@@ -53,53 +56,45 @@ def get_mbases() -> Dict[str, 'MBase']:
     return {b.nickname: b for b in bases}
 
 @cached
-def get_news() -> Dict[str, 'NewsItem']:
-	"""Produce a dictionary of base nicknames to their news items."""
-	news = ini.parse(paths.construct_path("DATA/MISSIONS/news.ini"))
+def get_news() -> Dict[str, List['NewsItem']]:
+    """Produce a dictionary of base nicknames to their news items."""
+    news = ini.parse(paths.construct_path('DATA/MISSIONS/news.ini'))
 
-	result = {}
+    result = defaultdict(list)
 
-	for _, contents in news:
-		bases = contents.get("base")
-		if bases:
-			if type(bases) != list:
-				bases = [bases]
-			for base in bases:
-				if result.get(base):
-					result[base].append(NewsItem(**contents))
-				else:
-					result[base] = [NewsItem(**contents)]
+    for _, contents in news:
+        bases = contents.get('base')
+        if bases:
+            if type(bases) is not list:
+                bases = [bases]
+            for base in bases:
+                result[base].append(NewsItem(**contents))
 
-	return result
-
-
-
+    return dict(result)
 
 @dataclass
 class NewsItem:
-	"""A news item, found in news.ini."""
-	category: int
-	headline: int
-	text: int
-	rank: Optional[Tuple[str]] = ()
-	icon: Optional[str] = ""
-	logo: Optional[str] = ""
-	audio: Optional[bool] = False
-	base: List[str] = []
+    """A news item, found in news.ini."""
+    category: int
+    headline: int
+    text: int
+    rank: Tuple[str, ...] = ()
+    icon: str = ''
+    logo: str = ''
+    audio: bool = False
+    base: Internal[List[str]] = []
 
-	def lookup(self, id, markup = "html"):
-		_markup_formats = dict(html=dll.lookup_as_html, plain=dll.lookup_as_plain, rdl=dll.lookup)
-		lookup = _markup_formats[markup]
-		return lookup(id)
+    def category_(self) -> str:
+        """The category description of this news item."""
+        return dll.lookup(self.category)
 
-	def _category(self, markup = "html"):
-		return self.lookup(self.category, markup)
+    def headline_(self) -> str:
+        """The headline of this news item."""
+        return dll.lookup(self.headline)
 
-	def _headline(self, markup = "html"):
-		return self.lookup(self.headline, markup)
-
-	def _text(self, markup = "html"):
-		return self.lookup(self.text, markup)	
+    def text_(self) -> str:
+        """This news item's textual content."""
+        return dll.lookup(self.text)
 
 @dataclass
 class MBase:
@@ -126,8 +121,8 @@ class MVendor:
 @dataclass
 class BaseFaction:
     """Found in mbases.ini, this section describes an individual NPC present on the preceding base."""
-    faction: Optional[str] = None
-    weight: Optional[int] = None
+    faction: str
+    weight: int
     offers_missions: bool = False
     mission_type: Optional[Tuple[str, float, float, int]] = None
     npc: List[str] = []
@@ -155,11 +150,6 @@ class GF_NPC:
     accessory: Optional[str] = None
     base_appr: Optional[str] = None
     rumor_type2: Optional[Tuple[str, str, int, int]] = None
-
-    def name(self, markup = "html"):
-        _markup_formats = dict(html=dll.lookup_as_html, plain=dll.lookup_as_plain, rdl=dll.lookup)
-        lookup = _markup_formats[markup]
-        return lookup(self.individual_name)
 
 
 @dataclass

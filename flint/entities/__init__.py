@@ -9,7 +9,7 @@ This namespace contains definitions for entities found within
 Freelancer.
 """
 from typing import TypeVar, Iterable, Generic, Type, Optional, Dict, Union
-from collections.abc import Mapping, KeysView, ItemsView
+from collections.abc import Mapping, KeysView, ItemsView, ValuesView
 import operator
 import pprint
 
@@ -129,6 +129,10 @@ class EntitySet(Mapping, Generic[T]):
     def items(self) -> ItemsView:
         """All entities in this set."""
         return self._map.items()
+
+    def values(self) -> ValuesView:
+        """All entities in this set."""
+        return self._map.values()
 
     @cached
     def of_type(self, type_: Type[F]) -> 'EntitySet[F]':

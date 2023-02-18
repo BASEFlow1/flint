@@ -170,9 +170,10 @@ def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
         if solar_type == 'object':
             o = attributes
             keys = o.keys()
-            if {'base', 'reputation'} <= keys and not 'atmosphere_range' in keys and 'docking_fixture' not in o['archetype'] and \
-            'planetdock' not in o['archetype'] and 'gallic_ring' not in o['archetype'] and 'dock_ring' not in o['archetype']:
-                result.append(BaseSolar(**o))
+            if ({'base', 'reputation'} <= keys and 'atmosphere_range' not in keys and 'docking_fixture' not in o['archetype'] and \
+            'planetdock' not in o['archetype'] and 'gallic_ring' not in o['archetype'] and 'dock_ring' not in o['archetype']) or (o['archetype'] == 'docking_fixture_horizontal'):
+                if 'parent' not in keys:
+                    result.append(BaseSolar(**o))
             elif 'goto' in keys:
                 result.append(Jump(**o))
             elif 'prev_ring' in keys or 'next_ring' in keys:

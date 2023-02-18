@@ -169,7 +169,7 @@ class Base(Entity):
 
     def news(self):
         """A list of all news items being shown on this base"""
-        return missions.get_news().get(self.nickname)
+        return missions.get_news().get(self.nickname, [])
 
 
     def owner(self) -> 'Faction':

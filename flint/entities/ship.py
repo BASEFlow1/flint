@@ -51,11 +51,11 @@ class Ship(Entity):
             return None
         return routines.get_goods().of_type(ShipPackage).unique(hull=self.hull().nickname)
 
-    def sold_at(self) -> List['Base']:
+    def sold_at(self) -> EntitySet['Base']:
         """A list of bases which sell this ship."""
         if not self.package():
-            return []
-        return list(self.package().sold_at().keys())
+            return EntitySet([])
+        return EntitySet(self.package().sold_at().keys())
 
     def price(self) -> int:
         """The price of this ship's hull."""
@@ -122,6 +122,12 @@ class Ship(Entity):
         """The maximum speed of this ship for a given force, in m/s."""
         return force / self.total_linear_drag()
 
+    def thrust_speed(self, thrust_force = 72000) -> float:
+        """The maximum thrust speed of this ship for a given thrust force, in m/s."""
+        engine = self.engine()
+        force = thrust_force + engine.max_force if engine else thrust_force
+        return force / self.total_linear_drag()
+
     def total_linear_drag(self) -> float:
         """The total linear resistive force for this ship and engine, in N (?)."""
         engine = self.engine()
@@ -173,8 +179,8 @@ class NPCShip(Entity):
     level: str
     ship_archetype: str
     state_graph: str
-    pilot: Optional[str] = None
-    npc_class: Optional[tuple] = None
+    pilot: str = ""
+    npc_class: tuple = ()
 
     def ship(self):
         """Get the ship Entity defined in ship_archetype"""

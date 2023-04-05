@@ -314,6 +314,8 @@ class CounterMeasure(Equipment):
 
 class CounterMeasureDropper(Weapon):
     """A countermeasure dispenser."""
+    refire_delay: float
+    power_usage: float
 
     def countermeasure(self) -> Optional['CounterMeasure']:
         """The CounterMeasure launched by this dropper."""

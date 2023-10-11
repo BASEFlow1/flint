@@ -18,12 +18,13 @@ inis: Dict[str, Tuple[str]] = {}  # ini category (defined in freelancer.ini) to 
 dlls: Dict[int, str] = {}  # dll number to path
 
 
-def set_install_path(new_path, discovery=False):
+def set_install_path(new_path, discovery=False, skipFLCheck = False):
     """Set the path to the installation"""
     global install
     if not os.path.exists(new_path):
         raise FileNotFoundError(new_path)
-    assert is_probably_freelancer(new_path, discovery)
+    if not skipFLCheck:
+        assert is_probably_freelancer(new_path, discovery)
 
     if install != new_path:
         install = new_path

@@ -8,10 +8,11 @@ file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from typing import Tuple, Optional, Union
 
 from dataclassy import dataclass
+from collections import defaultdict
 
-from . import Entity
-from .. import interface, maps
-
+from . import Entity, EntitySet, Equipment
+from .. import maps, interface, routines
+from ..formats import ini
 
 class Solar(Entity):
     """A solar is something fixed in space (this name comes from the DATA/SOLAR directory)."""
@@ -61,12 +62,19 @@ class TradeLaneRing(Object):
     system."""
     prev_ring: Optional[str] = None
     next_ring: Optional[str] = None
+    tradelane_space_name: int = 0
 
 
 class Wreck(Object):
     """A wreck (called "secrets" in the game files) is a lootable, wrecked ship floating in space."""
     loadout: str  # loot that is dropped upon being shot
 
+    def loadout_(self):
+        """This wreck's loadout entity"""
+        return routines.get_loadouts()[self.loadout]
+
+    def loot(self):
+        return self.loadout_().loot()
 
 @dataclass(slots=False)
 class BaseSolar(Object):
@@ -83,14 +91,32 @@ class BaseSolar(Object):
         return routines.get_factions()[self.reputation]
 
     def infocard(self, markup='html') -> str:
-        """Base infocards are actually in two parts, with ids_info referring to the specs of a base
-        and a second reference (defined in infocardmap.ini) storing the actual flavour text."""
+        """Base infocards are actually in two parts, with ids_info referring to the specs of a base and ids_info + 1
+        storing the actual description"""
         lookup = self._markup_formats[markup]
 
         specifications = lookup(self.ids_info)
         try:
-            synopsis = lookup(interface.get_infocard_map()[self.ids_info])
-            return specifications + '<p>' + synopsis
+            synopsis = lookup(interface.get_infocardmap().get(self.ids_info))
+            # if not synopsis:
+            #     synopsis = lookup(self.ids_info + 1)
+            return specifications + '<p >' + synopsis
+        except KeyError:
+            return specifications
+
+    def infocard2(self, markup='html') -> str:
+        """Base infocards are actually in two parts, with ids_info referring to the specs of a base and ids_info + 1
+        storing the actual description"""
+        lookup = self._markup_formats[markup]
+
+        specifications = '<p>'
+        try:
+            synopsis = lookup(interface.get_infocardmap().get(self.ids_info))
+            if not synopsis:
+                return False
+                synopsis = lookup(self.ids_info + 1)
+            return True
+            return specifications + '<p >' + synopsis
         except KeyError:
             return specifications
 
@@ -108,7 +134,7 @@ class Star(Spheroid):
 @dataclass(slots=False)
 class Planet(Spheroid):
     """A planet in a System."""
-    spin: Tuple[float, float, float] = (0., 0., 0.)
+    spin: Optional[Tuple[float, float, float]] = (0. ,0. ,0.)
 
 
 class PlanetaryBase(Planet, BaseSolar):
@@ -119,6 +145,32 @@ class Zone(Solar):
     """A zone is a region of space, possibly with effects attached."""
     size: Union[int, Tuple[int, int], Tuple[int, int, int]]
     shape: str  # one of: sphere, ring, box, ellipsoid
+
+
+class Loadout(Entity):
+    nickname: str
+    archetype: Optional[str] = None
+    cargo: tuple((str, int)) = None # (nickname, amount)
+
+    def loot(self) -> EntitySet['Equipment']:
+        result = []
+        if type(self.cargo) is not list and self.cargo:
+            self.cargo = [self.cargo]
+
+        if self.cargo:
+            for equip in self.cargo:
+                if not type(equip) == tuple:
+                    equip = [equip, 1]
+
+                result.append([routines.get_equipment()[equip[0]], equip[1]])
+        
+        default = defaultdict(int, dict(result))
+        
+        for e in default:
+            if [i[0] for i in result].count(e) > 1:
+                default[e] = [i[0] for i in result].count(e)
+
+        return [[x, y] for x, y in dict(default).items()]
 
 
 from .universe import Base, Faction, System

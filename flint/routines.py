@@ -22,9 +22,9 @@ from .entities import Good, EquipmentGood, CommodityGood, ShipHull, ShipPackage
 from .entities import Commodity, Equipment, Armor, ShieldGenerator, Thruster, Gun, Engine, Power, ShieldBattery, \
     CounterMeasure, CounterMeasureDropper, Scanner, Tractor, CargoPod, CloakingDevice, RepairKit, Mine, MineDropper, \
     Munition, Explosion, Motor
-from .entities import Ship
+from .entities import Ship, NPCShip
 from .entities import Base, System, Faction
-from .entities import Solar, Object, Jump, BaseSolar, Star, Planet, PlanetaryBase, TradeLaneRing, Wreck, Zone
+from .entities import Solar, Object, Jump, BaseSolar, Star, Planet, PlanetaryBase, TradeLaneRing, Wreck, Zone, Loadout
 from . import entities
 
 
@@ -100,6 +100,11 @@ def get_commodities() -> EntitySet[Commodity]:
     is for convenience's sake."""
     return get_equipment().of_type(Commodity)
 
+@cached
+def get_guns() -> EntitySet[Gun]:
+    """All guns defined in the game files. Guns are actually a type of equipment, so this function
+    is for convenience's sake."""
+    return get_equipment().of_type(Gun)
 
 @cached
 def get_ships() -> EntitySet[Ship]:
@@ -113,28 +118,62 @@ def get_ships() -> EntitySet[Ship]:
 
     return EntitySet(result)
 
+@cached
+def get_loadouts() -> EntitySet[Loadout]:
+    loadouts = ini.sections(paths.inis['loadouts'])["loadout"]
+    result = []
+
+    for l in loadouts:
+        result.append(Loadout(**l))
+
+    return EntitySet(result)
 
 @cached
-def get_system_contents(system: System) -> EntitySet[Solar]:
+def get_npcships() -> EntitySet[NPCShip]:
+    path = paths.construct_path("DATA/MISSIONS/npcships.ini")
+    npcships = ini.sections(path)['npcshiparch']
+    result = []
+
+    for ship in npcships:
+        result.append(NPCShip(**ship))
+
+    return EntitySet(result)
+
+@cached
+def get_wrecks() -> EntitySet[Wreck]:
+    result = []
+
+    for s in get_systems():
+        for wreck in s.wrecks():
+            result.append(wreck)
+
+    return EntitySet(result)
+
+
+@cached
+def get_system_contents(system: System, raw = False) -> EntitySet[Solar]:
     """All solars (objects and zones) in a given system."""
     result = []
     contents = ini.parse(system.definition_path())
-
+    if raw:
+        return contents
     # categorise objects based on their keys
     for solar_type, attributes in contents:
         if 'ids_name' not in attributes:
+            pass
+        try:
+            attributes['_system'] = system
+            attributes['pos'] = PosVector(*attributes['pos'])
+        except:
             continue
-        attributes['_system'] = system
-        attributes['pos'] = PosVector(*attributes['pos'])
 
         if solar_type == 'object':
             o = attributes
             keys = o.keys()
-            is_planet = 'spin' in keys or 'atmosphere_range' in keys
-
-            if 'base' in keys and 'reputation' in keys:
-                if (o['nickname'] in o['base']) or (system.nickname not in o['base']):
-                    result.append(PlanetaryBase(**o) if is_planet else BaseSolar(**o))
+            if ({'base', 'reputation'} <= keys and 'atmosphere_range' not in keys and 'docking_fixture' not in o['archetype'] and \
+            'planetdock' not in o['archetype'] and 'gallic_ring' not in o['archetype'] and 'dock_ring' not in o['archetype']) or ('docking_fixture_horizontal' in o['archetype']):
+                if 'parent' not in keys:
+                    result.append(BaseSolar(**o))
             elif 'goto' in keys:
                 result.append(Jump(**o))
             elif 'prev_ring' in keys or 'next_ring' in keys:
@@ -143,8 +182,12 @@ def get_system_contents(system: System) -> EntitySet[Solar]:
                 result.append(Wreck(**o))
             elif 'star' in keys:
                 result.append(Star(**o))
-            elif is_planet:
-                result.append(Planet(**o))
+            elif 'spin' in keys and 'planet' in o['archetype']:
+                result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
+            elif 'atmosphere_range' in keys and 'planet' in o['archetype']:
+                result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))
+            elif 'planetdock' in o['archetype']:
+                result.append(PlanetaryBase(**o) if 'base' in keys else Planet(**o))                
             else:
                 result.append(Object(**o))
 

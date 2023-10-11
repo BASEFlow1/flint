@@ -16,7 +16,8 @@ from .goods import ShipHull, ShipPackage
 from .equipment import Equipment, Power, Engine
 from ..formats import dll
 from .. import routines, cached, paths
-
+from PIL import Image
+from io import BytesIO
 
 LOG_OF_E = math.log10(math.e)  # used to approximate angular acceleration curve
 
@@ -38,6 +39,7 @@ class Ship(Entity):
     angular_drag: Tuple[float, float, float]
     rotation_inertia: Tuple[float, float, float]
     hp_type: List[Tuple[str, ...]] = []
+    material_library: Optional[str] = None
 
     def hull(self) -> Optional[ShipHull]:
         """This ship's hull entity."""
@@ -49,11 +51,11 @@ class Ship(Entity):
             return None
         return routines.get_goods().of_type(ShipPackage).unique(hull=self.hull().nickname)
 
-    def sold_at(self) -> List['Base']:
+    def sold_at(self) -> EntitySet['Base']:
         """A list of bases which sell this ship."""
         if not self.package():
-            return []
-        return list(self.package().sold_at().keys())
+            return EntitySet([])
+        return EntitySet(self.package().sold_at().keys())
 
     def price(self) -> int:
         """The price of this ship's hull."""
@@ -65,6 +67,10 @@ class Ship(Entity):
     def icon(self) -> bytes:
         """This ship's icon."""
         return self.hull().icon()
+
+    def icon_show(self):
+        image = Image.open(BytesIO(self.icon()))
+        image.show()
 
     def infocard(self, markup='html') -> str:
         """I have no idea why the order these are displayed in is not ascending, but anyway."""
@@ -135,6 +141,10 @@ class Ship(Entity):
         engine = self.engine()
         return engine.cruise_charge_time if engine else 0
 
+    def cruise_speed(self):
+        """The cruise speed of this ship, either defined in constants.ini or under "cruise_speed" in the engine block"""
+        return self.engine().cruise_speed_()
+
     def hardpoints(self) -> Dict[str, List['Hardpoint']]:
         """A mapping of this ship's hardpoints of the form
         {hardpoint nickname -> union of weapon classes that can be mounted on this hardpoint}."""
@@ -143,6 +153,11 @@ class Ship(Entity):
             for hp in hardpoints:
                 result.setdefault(hp, []).append(Hardpoint(hp_class))
         return result
+
+    def materials(self) -> list:
+        """Paths to this ships material files"""
+        materials = self.material_library if type(self.material_library) == list else [materials]
+        return [paths.construct_path("data/" + path) for path in materials]
 
     @staticmethod
     @cached
@@ -157,6 +172,22 @@ class Ship(Entity):
             result.extend(dll.parse(ship_class, 0).values())
 
         return result
+
+class NPCShip(Entity):
+    """Ship defined in npcships.ini"""
+    loadout: str
+    level: str
+    ship_archetype: str
+    state_graph: str
+    pilot: str = ""
+    npc_class: tuple = ()
+
+    def ship(self):
+        """Get the ship Entity defined in ship_archetype"""
+        try:
+            return routines.get_ships()[self.ship_archetype]
+        except KeyError:
+            return None
 
 
 @dataclass

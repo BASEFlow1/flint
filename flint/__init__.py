@@ -14,11 +14,10 @@ warnings.formatwarning = lambda message, *args, **kwargs: f'{message!s}\n'  # pa
 central_cache: Set[object] = set()
 
 
-def cached(function: Function) -> Function:
+def cached(function: Function) -> object:
     """A decorator which caches a function to the central cache."""
     wrapped = lru_cache(maxsize=None)(function)
     central_cache.add(wrapped)
-    # noinspection PyTypeChecker
     return wrapped
 
 
@@ -30,7 +29,7 @@ def invalidate_cache():
 
 
 from .paths import set_install_path, install_path_set
-from .routines import get_commodities, get_bases, get_equipment, get_ships, get_systems, get_factions, get_goods
+from .routines import get_commodities, get_bases, get_equipment, get_ships, get_systems, get_factions, get_goods, get_npcships
 
 
 shorthand = {'bases': get_bases,
@@ -39,7 +38,8 @@ shorthand = {'bases': get_bases,
              'factions': get_factions,
              'goods': get_goods,
              'ships': get_ships,
-             'systems': get_systems}
+             'systems': get_systems,
+             'npcships': get_npcships}
 
 
 def __getattr__(name):

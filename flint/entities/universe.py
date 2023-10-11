@@ -13,10 +13,11 @@ from dataclassy import Internal
 from ..formats import dll
 from .. import paths, routines, missions
 from . import Entity, EntitySet
-from .solars import Solar, BaseSolar, Jump, Planet, Star, Zone, Object, TradeLaneRing
+from .solars import BaseSolar, Wreck
 from .equipment import Equipment, Commodity
 from .ship import Ship
 from .goods import EquipmentGood, CommodityGood, ShipPackage
+
 
 class System(Entity):
     """A star system."""
@@ -29,7 +30,15 @@ class System(Entity):
 
     def contents(self) -> 'EntitySet[Solar]':
         """All solars in this system."""
-        return routines.get_system_contents(self)
+        return routines.get_system_contents(self, False)
+    
+    def contents_raw(self) -> 'list':
+        """All solars in this system."""
+        return routines.get_system_contents(self, True)
+
+    def wrecks(self) -> 'EntitySet[Wreck]':
+        """All wrecks in this system"""
+        return self.contents().of_type(Wreck)
 
     def zones(self) -> 'EntitySet[Zone]':
         """All zones in this system."""
@@ -84,10 +93,9 @@ class Base(Entity):
     ids_info = None  # infocard is defined by the base's solar
     system: str
 
-    def infocard(self, markup='html') -> Optional[str]:
+    def infocard(self, markup='html') -> str:
         """The infocard of this base's solar (Base sections do not define ids_info)."""
-        if self.has_solar():
-            return self.solar().infocard(markup)
+        return self.solar().infocard(markup)
 
     def system_(self) -> System:
         """The entity of the system this base resides in."""
@@ -98,19 +106,56 @@ class Base(Entity):
         return self.system_().bases().unique(base=self.nickname)
 
     def has_solar(self) -> bool:
-        """Whether this base has a physical, real solar instance.
-        Excludes proxy bases, asteroid miners and other evils."""
+        """Whether this base has a physical solar."""
         return self.solar() is not None
 
     def mbase(self) -> Optional[missions.MBase]:
         """The mission base entry for this base."""
         return missions.get_mbases().get(self.nickname)
 
-    def rumors(self, markup='html') -> Dict['Faction', Set[str]]:
+    def bribes(self):
+        """The bribes offered on this base."""
+        if self.mbase():
+            npcs = self.mbase().npcs
+            bribes = [npc.bribe if type(npc.bribe) == list else [npc.bribe] for npc in npcs]
+            factions = []
+            bribes = [elem for sublist in bribes for elem in sublist]
+            bribes = list(filter(None, bribes))
+            for faction in bribes:
+                try:
+                    factions.append(faction[0])
+                except KeyError:
+                    pass
+            factions = list(dict.fromkeys(factions))
+            facts = []
+            for x in factions:
+                try:
+                    facts.append(routines.get_factions()[x])
+                except KeyError:
+                    pass
+            return EntitySet(facts)
+    
+    def missions(self):
+        """The factions offering missions on this base."""
+        factions = []
+        if self.mbase():
+            for faction in self.mbase().factions:
+                    if faction.mission_type and type(faction.faction) != list:
+                        factions.append(faction.faction)
+                    elif faction.mission_type:
+                        for fact, offers in zip(faction.faction, faction.offers_missions):
+                            if offers:
+                                factions.append(fact)
+        return EntitySet(routines.get_factions()[x] for x in factions)
+
+    def factions(self) -> list:
+        """All factions present on this base"""
+        if self.mbase():
+            return EntitySet(routines.get_factions()[fact.faction] for fact in [entry for entry in self.mbase().factions])
+ 
+    def rumors(self, markup='html') -> Dict[str, Set[str]]:
         """All rumors offered on this base, of the form {faction -> rumors}"""
         lookup = self._markup_formats[markup]
-        factions = routines.get_factions()
-
         if self.mbase():
             rumors = defaultdict(set)
             npcs = self.mbase().npcs
@@ -119,29 +164,26 @@ class Base(Entity):
                 if npc.rumor:
                     if type(npc.rumor) is not list:
                         npc.rumor = [npc.rumor]
-                    rumors[factions[npc.affiliation]].update(
+                    
+                    rumors[routines.get_factions()[npc.affiliation]].update(
                         lookup(rumor_id) for *_, rumor_id in npc.rumor
                     )
             return dict(rumors)
         return {}
 
-    def news(self) -> List[missions.NewsItem]:
-        """A list of all news items being shown on this base."""
+    def news(self):
+        """A list of all news items being shown on this base"""
         return missions.get_news().get(self.nickname, [])
 
-    def owner(self) -> Optional['Faction']:
+
+    def owner(self) -> 'Faction':
         """The faction which owns this base (its IFF)."""
-        if self.has_solar():
-            return self.solar().owner()
+        return self.solar().owner() if self.has_solar() \
+            else routines.get_factions()[self.mbase().local_faction] if self.mbase() else None
 
-        mbase = self.mbase()
-        if mbase:
-            return routines.get_factions()[mbase.local_faction]
-
-    def sector(self) -> Optional[str]:
+    def sector(self) -> str:
         """The sector of this base's solar in its system."""
-        if self.has_solar():
-            return self.solar().sector()
+        return self.solar().sector()
 
     def market(self):
         return routines.get_markets()[self]
@@ -183,7 +225,7 @@ class Faction(Entity):
 
     def bases(self) -> EntitySet[Base]:
         """All bases owned by this faction."""
-        return EntitySet(b for s in routines.get_systems() for b in s.bases().where(reputation=self.nickname))
+        return EntitySet(base for base in routines.get_bases() if base.has_solar() and base.solar().reputation == self.nickname)
 
     def rep_sheet(self) -> Dict['Faction', float]:
         """How this faction views other factions - its reputation sheet."""
@@ -202,4 +244,45 @@ class Faction(Entity):
         """The legality of this faction as defined in its FactionProps entry (Lawful or Unlawful)."""
         return self.props().legality.capitalize()
 
+    def ships(self) -> EntitySet[Ship]:
+        """All ships this faction uses, as defined in faction_props.ini"""
+        result = []
+        npc_ship = self.props().npc_ship if type(self.props().npc_ship) == list else [self.props().npc_ship]
+
+        for x in npc_ship:
+            if routines.get_npcships()[x].ship():
+                result.append(routines.get_npcships()[x].ship())
+
+        return EntitySet(result)
+
+    def bribes(self) -> EntitySet[Base]:
+        """EntitySet of bases that offer bribes/rep hacks for this faction"""
+        result = set()
+
+        for base in routines.get_bases():
+            try:
+                if base.has_solar():
+                    if self.nickname in base.bribes():
+                        result.add(base)
+            except TypeError:
+                pass
+
+        return EntitySet(result)
+
+    def rumors(self) -> dict:
+        """All rumors this faction offers mapped to the bases they are offered on"""
+        result = {}
+        for base in routines.get_bases():
+            try:
+                if base.has_solar():
+                    if self in base.rumors().keys():
+                        result[base.nickname] = base.rumors()[self]
+            except AttributeError:
+                pass
+
+        return result
+
     NODOCK_REP = -0.65
+
+
+from .solars import Solar, BaseSolar, Jump, Planet, Star, Zone, Object, TradeLaneRing

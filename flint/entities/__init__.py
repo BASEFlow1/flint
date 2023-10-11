@@ -9,14 +9,14 @@ This namespace contains definitions for entities found within
 Freelancer.
 """
 from typing import TypeVar, Iterable, Generic, Type, Optional, Dict, Union
-from collections.abc import Mapping, KeysView, ItemsView
+from collections.abc import Mapping, KeysView, ItemsView, ValuesView
 import operator
 import pprint
 
 from dataclassy import dataclass, as_dict
 
-from ..formats import dll
-from .. import cached
+from ..formats import dll, ini
+from .. import cached, paths
 
 
 @dataclass(kwargs=True, slots=True)
@@ -46,16 +46,21 @@ class Entity:
         """The display name of this entity."""
         return dll.lookup(self.ids_name)
 
+    def name_(self) -> str:
+        """The display name of this entity."""
+        return dll.lookup(self.ids_name)
+
     def infocard(self, markup='html') -> str:
         """The infocard for this entity, formatted in the markup language (`rdl`, `html` or `plain`) specified."""
         lookup = self._markup_formats[markup]
-        return lookup(self.ids_info)
+        return lookup(self.ids_info[0] if type(self.ids_info) == list else self.ids_info)
 
     def __hash__(self) -> int:
         return hash(self.nickname)
 
     def __eq__(self, other) -> bool:
-        return self.nickname == other.nickname
+        try: return self.nickname == other.nickname
+        except: return False
 
     # Return this entity's fields as a dictionary.
     as_dict = as_dict
@@ -65,7 +70,6 @@ class Entity:
 
 T = TypeVar('T')
 F = TypeVar('F')
-
 
 class EntitySet(Mapping, Generic[T]):
     """An immutable collection of entities, indexed by nickname."""
@@ -125,6 +129,10 @@ class EntitySet(Mapping, Generic[T]):
     def items(self) -> ItemsView:
         """All entities in this set."""
         return self._map.items()
+
+    def values(self) -> ValuesView:
+        """All entities in this set."""
+        return self._map.values()
 
     @cached
     def of_type(self, type_: Type[F]) -> 'EntitySet[F]':

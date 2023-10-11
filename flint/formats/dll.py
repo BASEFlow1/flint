@@ -65,7 +65,7 @@ def dump_all() -> Dict[int, str]:
     This is a bit hacky Look up the first resource in each DLL to force the file to be lazy-loaded."""
     result = {}
     for i in paths.dlls:
-        lookup(i * 65536)
+        lookup_as_html(i * 65536)
         result.update(resource_table[i])
     return result
 
@@ -74,7 +74,7 @@ def dump_all_to_file(filename: str = 'infocards.txt'):
     """Dump all string resources to a text file in an identical format to that produced by FLInfocardIE."""
     resources = dump_all()
     pairs = (f'{id_}\n{text.strip()}\n' for id_, text in resources.items())
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding="utf-8") as f:
         f.writelines(pairs)
 
 

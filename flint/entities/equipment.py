@@ -24,7 +24,10 @@ from typing import Dict, Optional, Tuple, cast
 import math
 
 from . import Entity
-from .. import routines
+from .. import routines, interface
+from ..formats import ini
+from PIL import Image
+from io import BytesIO
 
 
 class Equipment(Entity):
@@ -34,6 +37,10 @@ class Equipment(Entity):
     def icon(self) -> bytes:
         """This equipment's icon in TGA format."""
         return self.good().icon()
+
+    def icon_show(self):
+        image = Image.open(BytesIO(self.icon()))
+        image.show()
 
     def good(self) -> Optional['Good']:
         """The good entity for this piece of equipment."""
@@ -127,6 +134,14 @@ class Gun(Weapon):
         """Energy consumption per second (i.e. power).."""
         return ((self.hull_damage() + self.shield_damage()) / self.power_usage) if self.power_usage else 0.0
 
+    def rating(self) -> float:
+        """FLStat rating"""
+        if self.price() == 0:
+            return 0
+        
+        value = self.hull_dps() / self.price() * 1000 if self.hull_dps() > self.shield_dps() else self.shield_dps() / self.price() * 1000
+        return self.efficiency() * value
+
     def technology(self) -> Optional[str]:
         """The technology of this gun. Null for non-energy (e.g. kinetic) guns."""
         return self.munition().weapon_type
@@ -183,6 +198,10 @@ class Mine(Projectile):
     acceleration: int
     ammo_limit: int
 
+    def name(self):
+        """Add "(Ammo)" to the end of the name to distinguish from the weapon it's used for"""
+        return self.name_() + " (Ammo)"
+
     def explosion(self) -> Optional['Explosion']:
         """The Explosion triggered by this mine."""
         return routines.get_equipment().get(self.explosion_arch)
@@ -200,6 +219,10 @@ class Munition(Projectile):
     cruise_disruptor: Optional[bool] = None  # only set for missiles
     motor: Optional[str] = None  # only set for missiles
     seeker: Optional[str] = None
+
+    def name(self):
+        """Add "(Ammo)" to the end of the name to distinguish from the weapon it's used for"""
+        return self.name_() + " (Ammo)"
 
     def explosion(self) -> Optional['Explosion']:
         """The Explosion triggered by this munition."""
@@ -243,6 +266,11 @@ class Explosion(Projectile):
 class Thruster(External):
     """A thruster that provides supplementary acceleration and velocity to the main engine."""
     power_usage: float
+    max_force: float
+    explosion_resistance: float
+
+    def efficiency(self):
+        return self.max_force / self.power_usage
 
 
 class ShieldGenerator(External):
@@ -250,6 +278,11 @@ class ShieldGenerator(External):
     shield_type: str = ''  # the shield's technology type
     max_capacity: float
     explosion_resistance: float = 0.0
+    regeneration_rate: float
+    offline_rebuild_time: int
+    offline_threshold: float
+    constant_power_draw: int
+    rebuild_power_draw: int
 
 
 # equipment typically defined in misc_equip.ini
@@ -284,6 +317,8 @@ class CounterMeasure(Equipment):
 
 class CounterMeasureDropper(Weapon):
     """A countermeasure dispenser."""
+    refire_delay: float
+    power_usage: float
 
     def countermeasure(self) -> Optional['CounterMeasure']:
         """The CounterMeasure launched by this dropper."""
@@ -302,9 +337,14 @@ class ShieldBattery(Equipment):
 class Engine(Mountable):
     """A reaction engine that must be mounted to a ship to provide propulsion."""
     cruise_charge_time: int
+    cruise_speed: Optional[int] = 0
     reverse_fraction: float
     linear_drag: float
     max_force: float
+
+    def cruise_speed_(self):
+        return  self.cruise_speed if self.cruise_speed != 0 else \
+                interface.get_constants()["engineequipconsts"]["cruising_speed"] 
     
 
 # equipment typically defined in select_equip.ini
@@ -323,15 +363,16 @@ class Commodity(Equipment):
     decay_per_second: int
     volume: int  # volume of one unit in ship's cargo bay
 
-    def price_at(self):
+    def price_at(self, base):
         pass
 
     def highest_price(self):
-        return
+        return sorted(self.bought_at().items(), key=lambda item:item[1])[-1]
 
     def bought_at(self) -> Dict['Base', int]:
         """A dict of bases that buy this commodity of the form {base: price}."""
         return self.good().bought_at()
+
 
 
 from .goods import Good, EquipmentGood

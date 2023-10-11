@@ -22,6 +22,7 @@ from collections import defaultdict
 import concurrent.futures
 import itertools
 import warnings
+import string
 
 from .. import cached
 from . import bini
@@ -65,8 +66,13 @@ def parse_file(path: str):
     of entry/value pairs."""
     if bini.is_bini(path):
         return bini.parse_file(path)
-    with open(path, encoding='windows-1252') as f:
-        contents = f.read().lower()  # files are case insensitive
+    try:
+        with open(path, encoding='windows-1252') as f:
+            contents = f.read().lower()  # files are case insensitive
+    except:
+        with open(path, encoding='utf-8') as f:
+            contents = f.read().lower()  # files are case insensitive       
+            
     contents.replace(DELIMITER_COMMENT + SECTION_NAME_START, '')  # delete commented section markers
     return list(map(parse_section, contents.split(SECTION_NAME_START)))
 
@@ -132,6 +138,40 @@ def fold_dict(sequence, fold_values=True) -> Dict[str, Any]:
             d[key] = value
     return d
 
+def dumps(data: list):
+    sections = []
+
+    for section in data:
+        section_name = f"{SECTION_NAME_START}{section[0].title()}{SECTION_NAME_END}"
+        section_content = f"{section_name}\n"
+
+        for key, value in section[1].items():
+            temp = ""
+            if isinstance(value, float):
+                value = str(value).replace("+", "")
+            if isinstance(value, tuple):
+                temp = f"{key} {DELIMITER_KEY_VALUE} "
+                temp += "".join([f"{str(x)}, " for x in value])[:-2] + "\n"
+                section_content += temp
+            elif isinstance(value, list):
+                for entry in value:
+                    if isinstance(entry, tuple):
+                        temp = f"{key} {DELIMITER_KEY_VALUE} "
+                        temp += "".join([f"{x}, " for x in entry])[:-2] + "\n"
+                    else:
+                        temp = f"{key} {DELIMITER_KEY_VALUE} "
+                        temp += f"{entry}\n"
+                    section_content += temp
+            else:
+                section_content += f"{key} {DELIMITER_KEY_VALUE} {value}\n"
+
+
+
+        sections.append(section_content + "\n")
+    return "".join(sections)
+
+def dump(data: list, fp):
+    fp.write(dumps(data))
 
 DELIMITER_KEY_VALUE = '='
 DELIMITER_COMMENT = ';'

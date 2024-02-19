@@ -11,16 +11,10 @@ Taken together, this yields a simple yet powerful API that can be used to explor
 flint explicitly supports vanilla Freelancer and [Discovery Freelancer](https://discoverygc.com), but in principle should (though it's not yet) be implemented robustly enough to work with any valid mod, no matter how esoteric.
 
 ## Installation
-Install the latest stable version from [PyPI](https://pypi.org/project/fl-flint) with pip:
+Install the latest development version straight from this repository:
 
 ```sh
-pip install fl-flint
-```
-
-Or install the latest development version straight from this repository:
-
-```sh
-pip install https://github.com/biqqles/flint/archive/master.zip -U
+pip install https://github.com/san-e/flint/archive/wiki.zip -U
 ```
 
 Built wheels are also available under [Releases](https://github.com/biqqles/flint/releases), as is a changelog.

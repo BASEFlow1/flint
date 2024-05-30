@@ -62,6 +62,7 @@ class TradeLaneRing(Object):
     system."""
     prev_ring: Optional[str] = None
     next_ring: Optional[str] = None
+    tradelane_space_name: int = 0
 
 
 class Wreck(Object):
@@ -159,8 +160,7 @@ class Loadout(Entity):
         if self.cargo:
             for equip in self.cargo:
                 if not type(equip) == tuple:
-                    equip = equip
-                else: [equip, 0]
+                    equip = [equip, 1]
 
                 result.append([routines.get_equipment()[equip[0]], equip[1]])
         

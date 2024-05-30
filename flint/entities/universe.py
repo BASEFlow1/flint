@@ -73,9 +73,12 @@ class System(Entity):
         for first_ring in lanes:
             current_ring = first_ring
             while current_ring:
-                current_ring = rings.get(current_ring.next_ring)
-                if current_ring:
-                    lanes[first_ring].append(current_ring)
+                if current_ring.next_ring:
+                    current_ring = rings.get(current_ring.next_ring)
+                    if current_ring:
+                        lanes[first_ring].append(current_ring)
+                else:
+                    break
         return [[f, *r] for f, r in lanes.items()]  # flatten grouping dict into list of lists
 
     def region(self) -> str:
@@ -161,6 +164,7 @@ class Base(Entity):
                 if npc.rumor:
                     if type(npc.rumor) is not list:
                         npc.rumor = [npc.rumor]
+                    
                     rumors[routines.get_factions()[npc.affiliation]].update(
                         lookup(rumor_id) for *_, rumor_id in npc.rumor
                     )
@@ -253,13 +257,13 @@ class Faction(Entity):
 
     def bribes(self) -> EntitySet[Base]:
         """EntitySet of bases that offer bribes/rep hacks for this faction"""
-        result = []
+        result = set()
 
         for base in routines.get_bases():
             try:
                 if base.has_solar():
                     if self.nickname in base.bribes():
-                        result.append(base)
+                        result.add(base)
             except TypeError:
                 pass
 
@@ -271,8 +275,8 @@ class Faction(Entity):
         for base in routines.get_bases():
             try:
                 if base.has_solar():
-                    if self.nickname in base.rumors().keys():
-                        result[base.nickname] = base.rumors()[self.nickname]
+                    if self in base.rumors().keys():
+                        result[base.nickname] = base.rumors()[self]
             except AttributeError:
                 pass
 

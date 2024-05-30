@@ -136,6 +136,9 @@ class Gun(Weapon):
 
     def rating(self) -> float:
         """FLStat rating"""
+        if self.price() == 0:
+            return 0
+        
         value = self.hull_dps() / self.price() * 1000 if self.hull_dps() > self.shield_dps() else self.shield_dps() / self.price() * 1000
         return self.efficiency() * value
 

@@ -13,6 +13,7 @@ for rich-text strings) to HTML.
 from typing import Dict
 from os import SEEK_CUR
 import warnings
+import json
 
 import deconstruct as c
 
@@ -70,10 +71,13 @@ def dump_all() -> Dict[int, str]:
     return result
 
 
-def dump_all_to_file(filename: str = 'infocards.txt'):
+def dump_all_to_file(filename: str = 'infocards.txt', format: str = 'FLInfocardIE'):
     """Dump all string resources to a text file in an identical format to that produced by FLInfocardIE."""
     resources = dump_all()
-    pairs = (f'{id_}\n{text.strip()}\n' for id_, text in resources.items())
+    if format.lower() == 'flinfocardie':
+        pairs = (f'{id_}\n{text.strip()}\n' for id_, text in resources.items())
+    elif format.lower() == 'json':
+        pairs = json.dumps(resources, indent = 1)
     with open(filename, 'w', encoding="utf-8") as f:
         f.writelines(pairs)
 

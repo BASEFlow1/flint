@@ -47,7 +47,7 @@ def get_mbases() -> Dict[str, 'MBase']:
             # noinspection PyUnboundLocalVariable
             base.vendors.append(MVendor(**contents[0]))
         elif name == 'basefaction':
-            base.factions.extend(BaseFaction(**faction) for faction in contents)
+            base.factions.extend(BaseFaction(**faction) for faction in contents if not "reputation" in faction.keys())
         elif name == 'gf_npc':
             base.npcs.extend(GF_NPC(**npc) for npc in contents if 'nickname' in npc)
         elif name == 'mroom':
@@ -63,6 +63,10 @@ def get_news() -> Dict[str, List['NewsItem']]:
     result = defaultdict(list)
 
     for _, contents in news:
+        for key, value in contents.items():
+            if type(value) == list and key != "base" and key != "rank":
+                contents[key] = value[-1]
+
         bases = contents.get('base')
         if bases:
             if type(bases) is not list:
@@ -122,7 +126,7 @@ class MVendor:
 class BaseFaction:
     """Found in mbases.ini, this section describes an individual NPC present on the preceding base."""
     faction: str
-    weight: int
+    weight: Optional[int] = None
     offers_missions: bool = False
     mission_type: Optional[Tuple[str, float, float, int]] = None
     npc: List[str] = []
@@ -171,16 +175,16 @@ class FactionProps:
     jump_preference: str
     npc_ship: List[str] = []
     voice: List[str] = []
-    mc_costume: str
+    mc_costume: Optional[str] = None
     space_costume: List[Tuple[str, str, str]] = []
     firstname_male: Optional[Tuple[int, int]] = None
     firstname_female: Optional[Tuple[int, int]] = None
-    lastname: Tuple[int, int]
-    rank_desig: Tuple[int, int, int, int, int]
-    formation_desig: Tuple[int, int]
+    lastname: Optional[Tuple[int, int]] = None
+    rank_desig: Optional[Tuple[int, int, int, int, int]] = None
+    formation_desig: Optional[Tuple[int, int]] = None
     large_ship_desig: Optional[int] = None
     large_ship_names: Tuple[int, int] = None
     scan_for_cargo: List[Tuple[str, int]] = []
     scan_announce: bool = False
     scan_chance: float = 0.0
-    formation: List[Tuple[str, str]]
+    formation: Optional[List[Tuple[str, str]]] = None

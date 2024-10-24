@@ -17,6 +17,7 @@ This file is intended to be the main interface for accessing INI
 *and* BINI functions, as it contains higher-level functions as well
 as logic for checking whether a .ini file is an INI or a BINI.
 """
+
 from typing import Union, List, Dict, Any, Tuple
 from collections import defaultdict
 import concurrent.futures
@@ -29,7 +30,9 @@ from . import bini
 
 
 @cached
-def sections(paths: Union[str, Tuple[str]], fold_sections=False, fold_values=True) -> Dict[str, Any]:
+def sections(
+    paths: Union[str, Tuple[str]], fold_sections=False, fold_values=True
+) -> Dict[str, Any]:
     """Parse the Freelancer-style INI file(s) at `paths` and group sections of the same name together.
 
     THe result is a dict mapping a section name to a list of dictionaries representing the contents of each section
@@ -42,7 +45,11 @@ def sections(paths: Union[str, Tuple[str]], fold_sections=False, fold_values=Tru
     return fold_dict(parse(paths, fold_values), fold_sections)
 
 
-def parse(paths: Union[str, Tuple[str]], fold_values=True) -> List[Tuple[str, Dict[str, Any]]]:
+def parse(
+    paths: Union[str, Tuple[str]],
+    fold_values=True,
+    infocard_override: bool = False,
+) -> List[Tuple[str, Dict[str, Any]]]:
     """Parse an INI file, or a collection of INIs, to a list of tuples of the form (section_name, section_contents),
     where section_contents is a dict of the entries in that section. If fold_values is true (the default), the
     entries dict will be "folded" (see the docstring for `fold_dict`)."""
@@ -50,70 +57,109 @@ def parse(paths: Union[str, Tuple[str]], fold_values=True) -> List[Tuple[str, Di
         paths = [paths]
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        sections_ = itertools.chain(*executor.map(parse_file, paths))
+        sections_ = itertools.chain(
+            *executor.map(
+                lambda path: parse_file(path, infocard_override),
+                paths,
+            )
+        )
 
-    return [(name, fold_dict(entries, fold_values)) for name, entries in filter(None, sections_)]
+    return [
+        (name, fold_dict(entries, fold_values))
+        for name, entries in filter(None, sections_)
+    ]
 
 
 def group(paths: Union[str, Tuple[str]], fold_sections=True, fold_values=True):
     """Similar to `parse` but groups contiguous sequences of the same section name together."""
-    groups = itertools.groupby(parse(paths, fold_values), key=lambda pair: pair[0])  # group by section name
-    return [next(iter(fold_dict(contents, fold_sections).items())) for key, contents in groups]
+    groups = itertools.groupby(
+        parse(paths, fold_values), key=lambda pair: pair[0]
+    )  # group by section name
+    return [
+        next(iter(fold_dict(contents, fold_sections).items()))
+        for key, contents in groups
+    ]
 
 
-def parse_file(path: str):
+def parse_file(path: str, infocard_override: bool = False):
     """Takes a path to an INI or BINI file and outputs a list of tuples containing a section name and a list of tuples
     of entry/value pairs."""
     if bini.is_bini(path):
         return bini.parse_file(path)
     try:
-        with open(path, encoding='windows-1252') as f:
-            contents = f.read().lower()  # files are case insensitive
+        with open(path, encoding="windows-1252") as f:
+            contents = (
+                f.read().lower() if not infocard_override else f.read()
+            )  # files are case insensitive
     except:
-        with open(path, encoding='utf-8') as f:
-            contents = f.read().lower()  # files are case insensitive       
-            
-    contents.replace(DELIMITER_COMMENT + SECTION_NAME_START, '')  # delete commented section markers
-    return list(map(parse_section, contents.split(SECTION_NAME_START)))
+        with open(path, encoding="utf-8") as f:
+            contents = (
+                f.read().lower() if not infocard_override else f.read()
+            )  # files are case insensitive
+
+    contents.replace(
+        DELIMITER_COMMENT + SECTION_NAME_START, ""
+    )  # delete commented section markers
+    return list(
+        map(
+            lambda x: parse_section(x.strip(), infocard_override),
+            (
+                contents.split(SECTION_NAME_START)
+                if not infocard_override
+                else contents.split("\n" + SECTION_NAME_START)
+            ),
+        )
+    )
 
 
-def parse_section(section: str):
+def parse_section(section: str, infocard_override: bool = False):
     """Takes a raw section string (minus the [) and outputs a tuple containing the section name and a list of tuples
     of entry/value pairs. If the section is invalid, an empty tuple will be returned."""
     section_name, delimiter, entries = section.partition(SECTION_NAME_END)
     if not delimiter or (DELIMITER_COMMENT in section_name):
         return ()
     try:
-        return section_name, list(map(parse_entry, entries.splitlines()))
-    except ValueError as e:  # an entry with a syntax error invalidates the whole section
+        return section_name, list(
+            map(lambda x: parse_entry(x, infocard_override), entries.splitlines())
+        )
+    except (
+        ValueError
+    ) as e:  # an entry with a syntax error invalidates the whole section
         warnings.warn(f"Couldn't parse line in section {section_name!r}; {e}")
         return ()
 
 
-def parse_entry(entry: str):
+def parse_entry(entry: str, infocard_override: bool = False):
     """Takes an entry string consisting of a delimiter separated key/value pair and outputs a tuple of the
     name and value. If the entry is invalid, an empty tuple will be returned."""
     entry = entry.split(DELIMITER_COMMENT, 1)[0]  # remove comments
     key, delimiter, value = entry.partition(DELIMITER_KEY_VALUE)
     if not delimiter:  # if this isn't a valid entry line after all
         return ()
-    return key.strip(), parse_value(value)
+    return key.strip(), parse_value(value, infocard_override)
 
 
-def parse_value(entry_value: str) -> Union[Any, Tuple]:
+def parse_value(entry_value: str, infocard_override: bool = False) -> Union[Any, Tuple]:
     """Parse an entry value (consisting either of a string, int or float or a tuple of such) using and return it as a
     Python object."""
-    return tuple(map(auto_cast, entry_value.split(','))) if ',' in entry_value else auto_cast(entry_value)
+    return (
+        tuple(map(lambda x: auto_cast(x, infocard_override), entry_value.split(",")))
+        if "," in entry_value and not infocard_override
+        else auto_cast(entry_value, infocard_override)
+    )
 
 
-def auto_cast(value: str) -> Any:
+def auto_cast(value: str, infocard_override: bool = False) -> Any:
     """Interpret and coerce a string value to a Python type. If the value cannot be interpreted as a valid Python type,
     a `ValueError` will be raised."""
     value = value.strip()
-    if not (value[:1] == '-' or value[:1].isdigit()):  # if not a number
-        if value == 'true':
+    if infocard_override:
+        return value
+
+    if not (value[:1] == "-" or value[:1].isdigit()):  # if not a number
+        if value == "true":
             return True
-        if value == 'false':
+        if value == "false":
             return False
         return value
     try:
@@ -137,6 +183,7 @@ def fold_dict(sequence, fold_values=True) -> Dict[str, Any]:
         else:
             d[key] = value
     return d
+
 
 def dumps(data: list):
     sections = []
@@ -165,15 +212,15 @@ def dumps(data: list):
             else:
                 section_content += f"{key} {DELIMITER_KEY_VALUE} {value}\n"
 
-
-
         sections.append(section_content + "\n")
     return "".join(sections)
+
 
 def dump(data: list, fp):
     fp.write(dumps(data))
 
-DELIMITER_KEY_VALUE = '='
-DELIMITER_COMMENT = ';'
-SECTION_NAME_START = '['
-SECTION_NAME_END = ']'
+
+DELIMITER_KEY_VALUE = "="
+DELIMITER_COMMENT = ";"
+SECTION_NAME_START = "["
+SECTION_NAME_END = "]"

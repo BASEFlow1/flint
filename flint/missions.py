@@ -39,7 +39,6 @@ def get_mbases() -> Dict[str, 'MBase']:
 
     for name, contents in sections:
         contents = list(filter(None, contents))
-
         if name == 'mbase':
             base = MBase(**contents[0])
             bases.append(base)
